@@ -20,6 +20,4 @@ Route::prefix('admin')->group(function () {
     Route::get('tanaman/{tanaman}/cetak', [TanamanController::class, 'print'])->name('tanaman.print');
 });
 
-Route::prefix('user')->group(function () {
-    Route::get('tanaman/{tanaman}', [UserPlantController::class, 'show'])->name('user.tanaman.show');
-});
+Route::get('tanaman/{tanaman}', [UserPlantController::class, 'show'])->name('user.tanaman.show');
