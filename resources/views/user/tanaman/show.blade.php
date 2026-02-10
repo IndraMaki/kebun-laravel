@@ -3,7 +3,12 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ $plant->name }}</title>
+        @php
+            $plantName = optional($plant->plantName)->name ?? $plant->name;
+            $varietyName = optional($plant->variety)->name;
+            $fullTitle = $varietyName ? $plantName . ' - Varietas ' . $varietyName : $plantName;
+        @endphp
+        <title>{{ $fullTitle }}</title>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-gradient-to-b from-emerald-50/60 to-white min-h-screen text-slate-900">
@@ -34,10 +39,16 @@
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
                                 Detail Tanaman
                             </div>
-                            <div>
+                            <div class="space-y-1.5">
                                 <div class="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-slate-900">
-                                    {{ $plant->name }}
+                                    {{ $plantName }}
                                 </div>
+                                @if($varietyName)
+                                    <div class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1 text-xs sm:text-sm text-slate-700">
+                                        <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                                        Varietas: <span class="font-semibold">{{ $varietyName }}</span>
+                                    </div>
+                                @endif
                                 @if($plant->latin_name)
                                     <div class="mt-1 text-sm sm:text-base text-slate-500 italic">
                                         {{ $plant->latin_name }}
@@ -58,7 +69,7 @@
                                     <div class="overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/40 shadow-sm">
                                         <img
                                             src="{{ $plant->main_photo_url }}"
-                                            alt="{{ $plant->name }}"
+                                            alt="{{ $fullTitle }}"
                                             class="w-full h-full max-h-[420px] object-cover transition duration-300 ease-out hover:scale-[1.02]"
                                         />
                                     </div>
@@ -99,6 +110,15 @@
                                     <span class="text-base leading-none">→</span>
                                 </button>
                             @endif
+                            @if($plant->advantages)
+                                <button
+                                    id="btnAdvantages"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 rounded-full border border-emerald-200 bg-white px-4 py-2.5 text-sm font-medium text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50 active:bg-emerald-100 transition"
+                                >
+                                    <span>Keunggulan</span>
+                                    <span class="text-base leading-none">→</span>
+                                </button>
+                            @endif
                             @if($plant->care)
                                 <button
                                     id="btnCare"
@@ -118,7 +138,7 @@
                 <div class="relative z-10 max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-emerald-100">
                     <div class="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-slate-100">
                         <div class="text-sm font-semibold tracking-tight text-slate-900">
-                            Manfaat {{ $plant->name }}
+                            Manfaat {{ $plantName }}@if($varietyName) (Varietas {{ $varietyName }})@endif
                         </div>
                         <button id="closeBenefits" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition">
                             Tutup
@@ -137,7 +157,7 @@
                 <div class="relative z-10 max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-emerald-100">
                     <div class="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-slate-100">
                         <div class="text-sm font-semibold tracking-tight text-slate-900">
-                            Perawatan {{ $plant->name }}
+                            Perawatan {{ $plantName }}@if($varietyName) (Varietas {{ $varietyName }})@endif
                         </div>
                         <button id="closeCare" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition">
                             Tutup
@@ -151,18 +171,44 @@
                 </div>
             </div>
 
+            @if($plant->advantages)
+                <div id="modalAdvantages" class="fixed inset-0 z-50 hidden items-center justify-center px-4 sm:px-6 py-6 sm:py-8">
+                    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+                    <div class="relative z-10 max-w-lg w-full bg-white rounded-2xl shadow-2xl border border-emerald-100">
+                        <div class="flex items-center justify-between px-5 sm:px-6 pt-4 pb-3 border-b border-slate-100">
+                            <div class="text-sm font-semibold tracking-tight text-slate-900">
+                                Keunggulan {{ $plantName }}@if($varietyName) (Varietas {{ $varietyName }})@endif
+                            </div>
+                            <button id="closeAdvantages" class="inline-flex items-center justify-center rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-500 hover:bg-slate-50 active:bg-slate-100 transition">
+                                Tutup
+                            </button>
+                        </div>
+                        <div class="px-5 sm:px-6 py-4 max-h-[70vh] sm:max-h-[75vh] overflow-y-auto text-sm sm:text-base leading-relaxed text-slate-700">
+                            <div class="whitespace-pre-line">
+                                {{ $plant->advantages }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <script>
                 const btnBenefits = document.getElementById('btnBenefits');
+                const btnAdvantages = document.getElementById('btnAdvantages');
                 const btnCare = document.getElementById('btnCare');
                 const modalBenefits = document.getElementById('modalBenefits');
+                const modalAdvantages = document.getElementById('modalAdvantages');
                 const modalCare = document.getElementById('modalCare');
                 const closeBenefits = document.getElementById('closeBenefits');
+                const closeAdvantages = document.getElementById('closeAdvantages');
                 const closeCare = document.getElementById('closeCare');
                 if (btnBenefits) btnBenefits.addEventListener('click', () => modalBenefits.classList.remove('hidden'));
+                if (btnAdvantages) btnAdvantages.addEventListener('click', () => modalAdvantages.classList.remove('hidden'));
                 if (btnCare) btnCare.addEventListener('click', () => modalCare.classList.remove('hidden'));
                 if (closeBenefits) closeBenefits.addEventListener('click', () => modalBenefits.classList.add('hidden'));
+                if (closeAdvantages) closeAdvantages.addEventListener('click', () => modalAdvantages.classList.add('hidden'));
                 if (closeCare) closeCare.addEventListener('click', () => modalCare.classList.add('hidden'));
-                [modalBenefits, modalCare].forEach(m => { if (m) m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); }); });
+                [modalBenefits, modalAdvantages, modalCare].forEach(m => { if (m) m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); }); });
             </script>
         </div>
     </body>

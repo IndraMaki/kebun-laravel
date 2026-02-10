@@ -7,13 +7,6 @@
                 @csrf
                 @method('PUT')
                 <div>
-                    <label class="block text-sm mb-1">Nama</label>
-                    <input type="text" name="name" value="{{ old('name', $plant->name) }}" class="w-full border rounded px-3 py-2">
-                    @error('name')
-                        <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
-                    @enderror
-                </div>
-                <div>
                     <label class="block text-sm mb-1">Nama Latin</label>
                     <input type="text" name="latin_name" value="{{ old('latin_name', $plant->latin_name) }}" class="w-full border rounded px-3 py-2">
                     @error('latin_name')
@@ -22,13 +15,34 @@
                 </div>
                 <div>
                     <label class="block text-sm mb-1">Kategori</label>
-                    <select name="category_id" class="w-full border rounded px-3 py-2">
+                    <select id="categorySelect" class="w-full border rounded px-3 py-2">
                         <option value="">Pilih Kategori</option>
                         @foreach ($categories as $cat)
-                            <option value="{{ $cat->id }}" @selected(old('category_id', $plant->category_id) == $cat->id)>{{ $cat->name }}</option>
+                            <option value="{{ $cat->id }}" @selected(optional($plant->plantName)->category_id == $cat->id)>{{ $cat->name }}</option>
                         @endforeach
                     </select>
-                    @error('category_id')
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Nama</label>
+                    <select name="plant_name_id" id="plantNameSelect" class="w-full border rounded px-3 py-2">
+                        <option value="">Pilih Nama</option>
+                        @foreach ($plantNames as $name)
+                            <option value="{{ $name->id }}" @selected(optional($plant->plantName)->id == $name->id)>{{ $name->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('plant_name_id')
+                        <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Varietas</label>
+                    <select name="variety_id" id="varietySelect" class="w-full border rounded px-3 py-2">
+                        <option value="">Pilih Varietas</option>
+                        @foreach ($varieties as $variety)
+                            <option value="{{ $variety->id }}" @selected(optional($plant->variety)->id == $variety->id)>{{ $variety->name }}</option>
+                        @endforeach
+                    </select>
+                    @error('variety_id')
                         <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
@@ -43,6 +57,13 @@
                     <label class="block text-sm mb-1">Manfaat</label>
                     <textarea name="benefits" rows="4" class="w-full border rounded px-3 py-2">{{ old('benefits', $plant->benefits) }}</textarea>
                     @error('benefits')
+                        <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div>
+                    <label class="block text-sm mb-1">Keunggulan</label>
+                    <textarea name="advantages" rows="4" class="w-full border rounded px-3 py-2">{{ old('advantages', $plant->advantages) }}</textarea>
+                    @error('advantages')
                         <div class="text-sm text-red-600 mt-1">{{ $message }}</div>
                     @enderror
                 </div>
@@ -74,4 +95,69 @@
                 </div>
             @endif
         </div>
+        <script>
+            const categorySelect = document.getElementById('categorySelect');
+            const plantNameSelect = document.getElementById('plantNameSelect');
+            const varietySelect = document.getElementById('varietySelect');
+
+            async function loadPlantNames(categoryId, selectedId) {
+                plantNameSelect.innerHTML = '<option value="">Memuat nama...</option>';
+                varietySelect.innerHTML = '<option value="">Pilih Varietas</option>';
+                if (!categoryId) {
+                    plantNameSelect.innerHTML = '<option value="">Pilih Nama</option>';
+                    return;
+                }
+                try {
+                    const res = await fetch(`/admin/api/plants-by-category/${categoryId}`);
+                    const data = await res.json();
+                    plantNameSelect.innerHTML = '<option value="">Pilih Nama</option>';
+                    data.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = p.name;
+                        if (selectedId && Number(selectedId) === Number(p.id)) {
+                            opt.selected = true;
+                        }
+                        plantNameSelect.appendChild(opt);
+                    });
+                } catch (e) {
+                    plantNameSelect.innerHTML = '<option value="">Gagal memuat nama</option>';
+                }
+            }
+
+            async function loadVarieties(plantNameId, selectedId) {
+                varietySelect.innerHTML = '<option value="">Memuat varietas...</option>';
+                if (!plantNameId) {
+                    varietySelect.innerHTML = '<option value="">Pilih Varietas</option>';
+                    return;
+                }
+                try {
+                    const res = await fetch(`/admin/api/varieties-by-plant-name/${plantNameId}`);
+                    const data = await res.json();
+                    varietySelect.innerHTML = '<option value="">Pilih Varietas</option>';
+                    data.forEach(v => {
+                        const opt = document.createElement('option');
+                        opt.value = v.id;
+                        opt.textContent = v.name;
+                        if (selectedId && Number(selectedId) === Number(v.id)) {
+                            opt.selected = true;
+                        }
+                        varietySelect.appendChild(opt);
+                    });
+                } catch (e) {
+                    varietySelect.innerHTML = '<option value="">Gagal memuat varietas</option>';
+                }
+            }
+
+            if (categorySelect) {
+                categorySelect.addEventListener('change', (e) => {
+                    loadPlantNames(e.target.value, null);
+                });
+            }
+            if (plantNameSelect) {
+                plantNameSelect.addEventListener('change', (e) => {
+                    loadVarieties(e.target.value, null);
+                });
+            }
+        </script>
 @endsection

@@ -13,7 +13,9 @@
                 <nav class="space-y-1 p-2">
                     <a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded {{ request()->routeIs('admin.dashboard') ? 'bg-gray-100' : '' }}">Dashboard</a>
                     <a href="{{ route('kategori.index') }}" class="block px-3 py-2 rounded {{ request()->routeIs('kategori.*') ? 'bg-gray-100' : '' }}">Kategori</a>
+                    <a href="{{ route('nama.index') }}" class="block px-3 py-2 rounded {{ request()->routeIs('nama.*') ? 'bg-gray-100' : '' }}">Nama</a>
                     <a href="{{ route('tanaman.index') }}" class="block px-3 py-2 rounded {{ request()->routeIs('tanaman.*') ? 'bg-gray-100' : '' }}">Tanaman</a>
+                    <a href="{{ route('varietas.index') }}" class="block px-3 py-2 rounded {{ request()->routeIs('varietas.*') ? 'bg-gray-100' : '' }}">Varietas</a>
                 </nav>
             </aside>
             <main class="flex-1 p-6">

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Plant;
 use App\Models\Category;
+use App\Models\PlantName;
+use App\Models\Variety;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
@@ -13,7 +15,7 @@ class TanamanController extends Controller
 {
     public function index()
     {
-        $plants = Plant::with('category')->orderBy('name')->get();
+        $plants = Plant::with(['category', 'plantName', 'variety'])->orderBy('name')->get();
         return view('admin.tanaman.index', compact('plants'));
     }
 
@@ -26,15 +28,26 @@ class TanamanController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'plant_name_id' => 'required|exists:plant_names,id',
+            'variety_id' => 'required|exists:varieties,id',
             'latin_name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'benefits' => 'nullable|string',
+            'advantages' => 'nullable|string',
             'care' => 'nullable|string',
             'main_photo' => 'nullable|image|max:4096',
-            'category_id' => 'required|exists:categories,id',
         ]);
         $data = $validated;
+
+        $plantName = PlantName::with('category')->findOrFail($validated['plant_name_id']);
+        $variety = Variety::where('id', $validated['variety_id'])
+            ->where('plant_name_id', $plantName->id)
+            ->firstOrFail();
+
+        $data['name'] = $plantName->name.' '.$variety->name;
+        $data['category_id'] = $plantName->category_id;
+        $data['plant_name_id'] = $plantName->id;
+        $data['variety_id'] = $variety->id;
 
         if ($request->hasFile('main_photo')) {
             $path = $request->file('main_photo')->store('plants', 'public');
@@ -60,24 +73,45 @@ class TanamanController extends Controller
     public function edit(Plant $tanaman)
     {
         $categories = Category::orderBy('name')->get();
+        $selectedPlantName = $tanaman->plantName;
+        $selectedVariety = $tanaman->variety;
+        $plantNames = $selectedPlantName
+            ? PlantName::where('category_id', $selectedPlantName->category_id)->orderBy('name')->get()
+            : collect();
+        $varieties = $selectedPlantName
+            ? Variety::where('plant_name_id', optional($selectedPlantName)->id)->orderBy('name')->get()
+            : collect();
         return view('admin.tanaman.edit', [
             'plant' => $tanaman,
             'categories' => $categories,
+            'plantNames' => $plantNames,
+            'varieties' => $varieties,
         ]);
     }
 
     public function update(Request $request, Plant $tanaman)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'plant_name_id' => 'required|exists:plant_names,id',
+            'variety_id' => 'required|exists:varieties,id',
             'latin_name' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'benefits' => 'nullable|string',
+            'advantages' => 'nullable|string',
             'care' => 'nullable|string',
             'main_photo' => 'nullable|image|max:4096',
-            'category_id' => 'required|exists:categories,id',
         ]);
         $data = $validated;
+
+        $plantName = PlantName::with('category')->findOrFail($validated['plant_name_id']);
+        $variety = Variety::where('id', $validated['variety_id'])
+            ->where('plant_name_id', $plantName->id)
+            ->firstOrFail();
+
+        $data['name'] = $plantName->name.' '.$variety->name;
+        $data['category_id'] = $plantName->category_id;
+        $data['plant_name_id'] = $plantName->id;
+        $data['variety_id'] = $variety->id;
 
         if ($request->hasFile('main_photo')) {
             $path = $request->file('main_photo')->store('plants', 'public');
@@ -111,5 +145,19 @@ class TanamanController extends Controller
     public function print(Plant $tanaman)
     {
         return view('admin.tanaman.print', ['plant' => $tanaman]);
+    }
+
+    public function plantNamesByCategory(Category $category)
+    {
+        return PlantName::where('category_id', $category->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+    }
+
+    public function varietiesByPlantName(PlantName $plantName)
+    {
+        return Variety::where('plant_name_id', $plantName->id)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 }
